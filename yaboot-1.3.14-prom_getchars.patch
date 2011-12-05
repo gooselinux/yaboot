@@ -1,0 +1,95 @@
+Date: Sun, 11 Apr 2010 14:05:59 +1000
+From: Anton Blanchard <anton@samba.org>
+Subject: prom_getchar eats characters
+
+This bug has been annoying me for a long time. If you copy and paste a
+string into the yaboot prompt, or even type too fast, characters get
+dropped.
+
+It turns out we were asking OF for 4 characters, but only using the first one.
+There is strange logic to look for \e[, and then oring the third character with
+0x100. I haven't been able to find anyone that knows why that was there in the
+first place, so just remove it and fix this bug once and for all.
+
+Automated test infrastructures the world over will thank us for fixing this
+bug!
+
+Signed-off-by: Anton Blanchard <anton@samba.org>    
+Signed-off-by: Tony Breeds <tony@bakeyournoodle.com>
+
+---
+diff -purN yaboot-1.3.14.orig/include/prom.h yaboot-1.3.14/include/prom.h
+--- yaboot-1.3.14.orig/include/prom.h	2010-05-13 22:32:41.363286396 -0500
++++ yaboot-1.3.14/include/prom.h	2010-05-15 22:45:20.057035750 -0500
+@@ -84,7 +84,6 @@ void prom_printf (char *fmt, ...);
+ #endif
+ 
+ void prom_perror (int error, char *filename);
+-void prom_readline (char *prompt, char *line, int len);
+ int prom_set_color(prom_handle device, int color, int r, int g, int b);
+ 
+ /* memory */
+diff -purN yaboot-1.3.14.orig/second/prom.c yaboot-1.3.14/second/prom.c
+--- yaboot-1.3.14.orig/second/prom.c	2010-05-13 22:32:41.383286111 -0500
++++ yaboot-1.3.14/second/prom.c	2010-05-15 22:45:43.615473125 -0500
+@@ -389,14 +389,12 @@ prom_readblocks (prom_handle dev, int bl
+ int
+ prom_getchar ()
+ {
+-     char c[4];
++     char c;
+      int a;
+ 
+-     while ((a = (int)call_prom ("read", 3, 1, prom_stdin, c, 4)) <= 0)
+-	  ;
+-     if (a == 3 && c[0] == '\e' && c[1] == '[')
+-	  return 0x100 | c[2];
+-     return c[0];
++     while ((a = (int)call_prom ("read", 3, 1, prom_stdin, &c, 1)) <= 0)
++	  continue;
++     return c;
+ }
+ 
+ int
+@@ -500,41 +498,6 @@ prom_perror (int error, char *filename)
+ 	  prom_printf("%s: Unknown error\n", filename);
+ }
+ 
+-void
+-prom_readline (char *prompt, char *buf, int len)
+-{
+-     int i = 0;
+-     int c;
+-
+-     if (prompt)
+-	  prom_puts (prom_stdout, prompt);
+-
+-     while (i < len-1 && (c = prom_getchar ()) != '\r')
+-     {
+-	  if (c >= 0x100)
+-	       continue;
+-	  if (c == 8)
+-	  {
+-	       if (i > 0)
+-	       {
+-		    prom_puts (prom_stdout, "\b \b");
+-		    i--;
+-	       }
+-	       else
+-		    prom_putchar ('\a');
+-	  }
+-	  else if (isprint (c))
+-	  {
+-	       prom_putchar (c);
+-	       buf[i++] = c;
+-	  }
+-	  else
+-	       prom_putchar ('\a');
+-     }
+-     prom_putchar ('\n');
+-     buf[i] = 0;
+-}
+-
+ #ifdef CONFIG_SET_COLORMAP
+ int prom_set_color(prom_handle device, int color, int r, int g, int b)
+ {

@@ -1,0 +1,15 @@
+diff -urNp yaboot-1.3.14.orig/second/fs_of.c yaboot-1.3.14/second/fs_of.c
+--- yaboot-1.3.14.orig/second/fs_of.c	2009-10-14 09:39:46.263661071 +1100
++++ yaboot-1.3.14/second/fs_of.c	2009-10-14 09:43:42.932691139 +1100
+@@ -92,8 +92,8 @@ of_open(struct boot_file_t* file,
+      strncpy(buffer, fspec->dev, 768);
+      strcat(buffer, ":");
+      if (part) {
+-          if (part->sys_ind == LINUX_RAID) {
+-	       DEBUG_F("skipping because partition is marked LINUX_RAID\n");
++          if (part->sys_ind == LINUX_RAID || part->sys_ind == LINUX_NATIVE) {
++	       DEBUG_F("skipping because partition is marked %x\n", part->sys_ind);
+ 	       DEBUG_LEAVE(FILE_ERR_BAD_FSYS);
+ 	       return FILE_ERR_BAD_FSYS;
+ 	  }
+Binary files yaboot-1.3.14.orig/second/.fs_of.c.swp and yaboot-1.3.14/second/.fs_of.c.swp differ

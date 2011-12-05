@@ -1,0 +1,99 @@
+Index: yaboot-1.3.14-30/include/prom.h
+===================================================================
+--- yaboot-1.3.14-30.orig/include/prom.h	2010-05-25 14:37:24.309622517 +1000
++++ yaboot-1.3.14-30/include/prom.h	2010-05-25 14:37:27.803373148 +1000
+@@ -158,5 +158,6 @@
+ struct bootp_packet * prom_get_netinfo (void);
+ char * prom_get_mac (struct bootp_packet * packet);
+ char * prom_get_ip (struct bootp_packet * packet);
++void *prom_rma_size(void);
+ 
+ #endif
+Index: yaboot-1.3.14-30/second/prom.c
+===================================================================
+--- yaboot-1.3.14-30.orig/second/prom.c	2010-05-25 14:37:24.309622517 +1000
++++ yaboot-1.3.14-30/second/prom.c	2010-05-25 14:37:27.805375106 +1000
+@@ -536,7 +536,16 @@
+ prom_claim_chunk(void *virt, unsigned int size, unsigned int align)
+ {
+      void *found, *addr;
+-     for(addr=virt; addr <= (void*)PROM_CLAIM_MAX_ADDR;
++     static void *claim_max_addr = -1;
++
++     if (claim_max_addr == (void*)-1) {
++          claim_max_addr = prom_rma_size();
++          if (claim_max_addr < PROM_CLAIM_MAX_ADDR)
++               claim_max_addr = PROM_CLAIM_MAX_ADDR;
++          DEBUG_F("Setting claim_max_addr to 0x%x\n", (int)claim_max_addr);
++     }
++
++     for(addr=virt; addr <= (void*)claim_max_addr;
+          addr+=(0x100000/sizeof(addr))) {
+           found = prom_claim(addr, size, 0);
+           if (found != (void *)-1) {
+@@ -739,6 +748,32 @@
+      return conf_path;
+ }
+ 
++void *prom_rma_size(void)
++{
++     int rc;
++     ihandle n;
++     u64 *start, *end;
++     unsigned char buf[16];		/* This will store 2 64-bit values */
++
++     DEBUG_ENTER;
++
++     n = prom_finddevice("/memory@0");
++     DEBUG_F("n = %x\n", (int)n);
++     rc = prom_getprop(n, "reg", &buf, 16);
++     DEBUG_F("rc = %d\n", rc);
++
++     /* If the getprop() failed fill the buffer with some known value */
++     if (rc == -1)
++          memset(&buf[0], 0xff, 16);
++
++     start = (u64*)&buf[0];
++     end   = (u64*)&buf[8];
++     DEBUG_F("start=0x%Lx, end=0x%Lx\n", *start, *end);
++
++     DEBUG_LEAVE(0);
++     return (void*)*end;
++}
++
+ /*
+  * Local variables:
+  * c-file-style: "k&r"
+Index: yaboot-1.3.14-30/second/yaboot.c
+===================================================================
+--- yaboot-1.3.14-30.orig/second/yaboot.c	2010-05-25 14:37:20.729370528 +1000
++++ yaboot-1.3.14-30/second/yaboot.c	2010-05-25 14:37:27.810374623 +1000
+@@ -121,6 +121,7 @@
+ struct boot_fspec_t boot;
+ int _machine = _MACH_Pmac;
+ int flat_vmlinux;
++u64 rma_size = 0;
+ 
+ #ifdef CONFIG_COLOR_TEXT
+ 
+@@ -239,6 +240,9 @@
+ 	  }
+      }
+ 
++     rma_size = (u64)prom_rma_size();
++     prom_printf("System has %Ld Mbytes in RMA\n", rma_size >> 20);
++
+      DEBUG_F("Running on _machine = %d\n", _machine);
+      DEBUG_SLEEP;
+ 
+@@ -1258,8 +1262,8 @@
+                                  (unsigned long)(initrd_size));
+ 
+                          /* Check to see if we're near the top of the RMA */
+-                         /* Cheat and assume the RMA == 128Mb */
+-                         if (initrd_end > 0x7000000) {
++                         /* Cheat and assume RTAS will be ~16Mb */
++                         if (initrd_end > rma_size - 0x1000000) {
+                               unsigned long new_initrd_end, free_len;
+                               unsigned long initrd_claim_len = initrd_end - (unsigned long)initrd_base;
+ 

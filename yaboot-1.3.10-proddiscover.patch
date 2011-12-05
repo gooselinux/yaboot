@@ -1,0 +1,59 @@
+--- yaboot-1.3.10/first/ofboot.name	2003-04-09 21:29:29.000000000 -0400
++++ yaboot-1.3.10/first/ofboot	2003-04-09 21:29:55.000000000 -0400
+@@ -86,6 +86,13 @@
+     MENU=1
+ fi
+ 
++if [ -f /etc/redhat-release ]; then
++    PRODUCT=`sed "s/ release.*//g" /etc/redhat-release`
++else
++    PRODUCT="PowerPC GNU/Linux"
++fi
++   
++
+ ## create the variables.
+ ##
+ ## OSNAME="$1"
+@@ -102,7 +109,7 @@
+ 	[ "$DEBUG" = 1 ] && $PRINTF 1>&2 "$PRG: DEBUG: file1: $5\n"
+ 	[ "$COUNT" = "$OSNUM" ] && c="."
+ 	BTYA=": boot$1 \" Loading second stage bootstrap...\" .printf 100 ms load-base release-load-area \" ${4}${5}\" \$boot ;"
+-	MENUYA="\" Press $3 for Red Hat Linux${c-,}\"(0d 0a)\" .printf"
++	MENUYA="\" Press $3 for $PRODUCT${c-,}\"(0d 0a)\" .printf"
+ 	GETYA="      ascii $3 of \" $3 \"(0d 0a)\" .printf boot$1 endof"
+ 	shift 5
+ 	COUNT="$(($COUNT + 1))"
+@@ -315,7 +322,7 @@
+ MacRISC MacRISC3 MacRISC4
+ </COMPATIBLE>
+ <DESCRIPTION>
+-Red Hat Linux First Stage Bootstrap
++$PRODUCT First Stage Bootstrap
+ </DESCRIPTION>
+ <BOOT-SCRIPT>
+ : .printf fb8-write drop ;
+@@ -336,7 +343,7 @@
+ $BGCOLOR to background-color
+ \" \"(0C)\" .printf
+ 
+-\" First Stage Red Hat Linux Bootstrap\"(0d 0a)\" .printf
++\" First Stage $PRODUCT Bootstrap\"(0d 0a)\" .printf
+ \"  \"(0d 0a)\" .printf
+ $MENUOPTS
+ \"  \"(0d 0a)\" .printf
+--- yaboot-1.3.10/ybin/yabootconfig.name	2003-04-09 21:24:20.000000000 -0400
++++ yaboot-1.3.10/ybin/yabootconfig	2003-04-09 21:27:07.000000000 -0400
+@@ -700,7 +700,12 @@
+     ENABLENETBOOT="enablenetboot\n"
+ fi
+ 
+-MESG='"Welcome to Red Hat Linux!\\nHit <TAB> for boot options.\\n\\n"'
++if [ -f /etc/redhat-release ]; then
++    PRODUCT=`sed "s/ release.*//g" /etc/redhat-release`
++else
++    PRODUCT="PowerPC GNU/Linux"
++fi
++MESG="\"Welcome to $PRODUCT!\\nHit <TAB> for boot options.\\n\\n\""
+ 
+ ## generate global section of yaboot.conf
+ GLOBAL="boot=${BOOT}${DEVICE:-}

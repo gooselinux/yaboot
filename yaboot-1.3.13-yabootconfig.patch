@@ -1,0 +1,249 @@
+--- yaboot-1.3.13/ybin/yabootconfig.yabootconfig	2005-07-25 16:09:39.000000000 -0400
++++ yaboot-1.3.13/ybin/yabootconfig	2005-07-25 16:25:03.000000000 -0400
+@@ -34,6 +34,7 @@
+ NOINSTALL=0
+ QUIET=0
+ DEBUG=0
++LABEL="Linux"
+ SIGINT="$PRG: Interrupt caught ... exiting"
+ export LC_COLLATE=C
+ 
+@@ -319,6 +320,16 @@
+                     exit 1
+                 fi
+ 		;;
++	    --kernel)
++                if [ -n "$2" ] ; then
++                    KERNELIMAGE="$2"
++                    shift 2
++                else
++                    echo 1>&2 "$PRG: option requires an argument $1"
++                    echo 1>&2 "Try \`$PRG --help' for more information."
++                    exit 1
++                fi
++		;;
+ 	    --kernel-args)
+                 if [ -n "$2" ] ; then
+                     KERNARGS="$2"
+@@ -347,10 +358,88 @@
+ 		NOINSTALL=1
+ 		shift 1
+ 		;;
++	    --enablecdboot)
++		CDBOOT=1
++		shift 1
++		;;
++	    --enablenetboot)
++		NETBOOT=1
++		shift 1
++		;;
+ 	    --debug)
+ 		DEBUG=1
+ 		shift 1
+ 		;;
++	    --delay)
++		if [ -n "$2" ] ; then
++		    DELAY=$2
++		    shift 2
++                else
++                    echo 1>&2 "$PRG: option requires an argument $1"
++                    echo 1>&2 "Try \`$PRG --help' for more information."
++                    exit 1
++                fi
++		;;
++	    --label)
++		if [ -n "$2" ] ; then
++		    LABEL=$2
++		    shift 2
++                else
++                    echo 1>&2 "$PRG: option requires an argument $1"
++                    echo 1>&2 "Try \`$PRG --help' for more information."
++                    exit 1
++                fi
++		;;
++	    --initrd)
++		if [ -n "$2" ] ; then
++		    INITRDPATH=$2
++		    shift 2
++                else
++                    echo 1>&2 "$PRG: option requires an argument $1"
++                    echo 1>&2 "Try \`$PRG --help' for more information."
++                    exit 1
++                fi
++		;;
++	    --macosx)
++		if [ -n "$2" ] ; then
++		    MACOSXDEV=$2
++		    shift 2
++                else
++                    echo 1>&2 "$PRG: option requires an argument $1"
++                    echo 1>&2 "Try \`$PRG --help' for more information."
++                    exit 1
++                fi
++		;;
++	    --macos)
++		if [ -n "$2" ] ; then
++		    MACOSDEV=$2
++		    shift 2
++                else
++                    echo 1>&2 "$PRG: option requires an argument $1"
++                    echo 1>&2 "Try \`$PRG --help' for more information."
++                    exit 1
++                fi
++		;;
++	    --darwin)
++		if [ -n "$2" ] ; then
++		    DARWINDEV=$2
++		    shift 2
++                else
++                    echo 1>&2 "$PRG: option requires an argument $1"
++                    echo 1>&2 "Try \`$PRG --help' for more information."
++                    exit 1
++                fi
++		;;
++	    --defaultos)
++		if [ -n "$2" ] ; then
++		    DEFOS=$2
++		    shift 2
++                else
++                    echo 1>&2 "$PRG: option requires an argument $1"
++                    echo 1>&2 "Try \`$PRG --help' for more information."
++                    exit 1
++                fi
++		;;
+             "")
+                 break
+                 ;;
+@@ -474,7 +563,7 @@
+ READLINKKV=`readlink /usr/src/linux`
+ ## find the kernel in the usual places and (if not --quiet) ask the
+ ## user if we cannot find one.
+-for k in "vmlinux" "vmlinux-`uname -r`" "vmlinux-`uname -r`" "$READLINKKV" ; do
++for k in "${KERNELIMAGE}" "vmlinux" "vmlinux-`uname -r`" "vmlinux-`uname -r`" "$READLINKKV" ; do
+	if [ -f "${CHROOT}${k}" ] ; then
+	    KERNEL="${CHROOT}${k}"
+	    break;
+@@ -721,6 +812,36 @@
+     HEADER="## see also: /usr/share/doc/yaboot/examples for example configurations.\n"
+ fi
+ 
++## find the kernel in the usual places and (if not --quiet) ask the
++## user if we cannot find one.
++if [ -f "${CHROOT}${INITRDPATH}" ] ; then
++    REALINITRD="${CHROOT}${INITRDPATH}"
++
++    ## if there is a separate /boot partition we must strip off the /boot
++    ## mountpoint or else yaboot will not find the kernel.
++    if [ "$KERNDIR" != "$CHROOT" ] ; then
++        INITRD="${REALINITRD##*$KERNDIR}"
++    else
++        INITRD="$REALINITRD"
++    fi
++
++    ## fix chrooted path
++    if [ "$CHROOT" != / ] ; then
++       INITRD="${INITRD##*$CHROOT}"
++    fi
++
++    ## fix relative path (caused by chroot path fix)
++    case "$INITRD" in
++        /*)
++        true
++        ;;
++        *)
++        INITRD="/${INITRD}"
++        ;;
++    esac
++    INITRDLINE="\tinitrd=$INITRD\n"
++fi
++
+ ## setup append line
+ if [ -n "$KERNARGS" ] ; then
+     APPEND="\tappend=\"${KERNARGS}\"\n"
+@@ -731,24 +850,64 @@
+     INITRDIMGS="\tinitrd=$INITRDIMG\n\tinitrd-size=8192\n"
+ fi
+ 
++## setup default OS bits for ybin
++if [ -n "$DEFOS" ] ; then
++   if [ "$DEFOS" = "macosx" ] ; then
++       DEFAULTOS="defaultos=${DEFOS}\n"
++   elif [ "$DEFOS" = "macos" ] ; then
++        DEFAULTOS="defaultos=${DEFOS}\n"
++   elif [ "$DEFOS" = "darwin" ] ; then
++         DEFAULTOS="defaultos=${DEFOS}\n"
++   else
++      DEFAULTOS="defaultos=linux\n"
++   fi
++else
++   DEFAULTOS="defaultos=linux\n"
++fi
++if [ -n "$DELAY" ] ; then
++    MENUDELAY="delay=${DELAY}\n"
++fi
++
++## setup enabling cd or network boot from OF
++if [ -n "$CDBOOT" ] ; then
++    ENABLECDBOOT="enablecdboot\n"
++fi
++if [ -n "$NETBOOT" ] ; then
++    ENABLENETBOOT="enablenetboot\n"
++fi
++
++MESG='"Welcome to Red Hat Linux!\\nHit <TAB> for boot options.\\n\\n"'
++
+ ## generate global section of yaboot.conf
+-GLOBAL="## yaboot.conf generated by $PRG $VERSION
+-##
+-## run: \"man yaboot.conf\" for details. Do not make changes until you have!!
+-${HEADER}##
+-## For a dual-boot menu, add one or more of:
+-## bsd=/dev/hdaX, macos=/dev/hdaY, macosx=/dev/hdaZ\n
+-boot=${BOOT}${DEVICE:-}
++GLOBAL="boot=${BOOT}${DEVICE:-}
++init-message=$MESG
+ partition=$PARTITION
+-root=$ROOT
+ timeout=30
+-install=${INSTALL}${OFBOOT:-}\n"
++install=${INSTALL}${OFBOOT:-}
++default=$LABEL
++${DEFAULTOS:-}${MENUDELAY:-}${ENABLECDBOOT:-}${ENABLENETBOOT:-}"
+ 
+ ## generate image= section
+ IMAGES="
+ image=$IMAGE
+-\tlabel=Linux
+-\tread-only\n${APPEND:-}${INITRDIMGS:-}"
++\tlabel=$LABEL
++\troot=$ROOT
++\tread-only\n
++${INITRDLINE-}${APPEND:-}"
++
++if [ -n "$MACOSXDEV" ] ; then
++    MACOSX="macosx=${MACOSXDEV}\n"
++fi
++
++if [ -n "$MACOSDEV" ] ; then
++    MACOS="macos=${MACOSDEV}\n"
++fi
++
++if [ -n "$DARWINDEV" ] ; then
++    DARWIN="darwin=${DARWINDEV}\n"
++fi
++
++OTHER="${MACOSX}${MACOS}${DARWIN}${BSD}"
+ 
+ ## safely create a tmp file then move it into place after we are sure
+ ## it was written.
+@@ -767,7 +928,9 @@
+     exit 1
+ fi
+ 
+-$PRINTF "${GLOBAL}${IMAGES}" > "$TMPCONF"
++printf "${GLOBAL}
++${IMAGES}
++${OTHER}" > "$TMPCONF"
+ if [ $? != 0 ] ; then
+     echo 1>&2 "$PRG: Unable to write temporary file ${TMPCONF}, aborting..."
+     exit 1

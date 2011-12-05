@@ -1,0 +1,66 @@
+extract_netinfo_args() should be a void function.
+
+If there is no "netinfo" packet, extract_netinfo_args() will fail and cause 
+parse_device_path() to abort.  This basically meant that yaboot will fail to
+load any kernel/initrd under those circumstances.
+
+This fix changes extract_netinfo_args() to be a void function.
+
+Signed-off-by: Tony Breeds <tonyb@au1.ibm.com>
+---
+I'll talk to FW about /why/ there is no netinfo data, but even if that is a FW bug we need to work around it.
+
+ second/file.c |   13 ++++---------
+ 1 file changed, 4 insertions(+), 9 deletions(-)
+
+--- yaboot-1.3.14.orig/second/file.c	2010-03-06 09:23:12.174204856 +0800
++++ yaboot-1.3.14/second/file.c	2010-03-06 11:59:04.045205260 +0800
+@@ -260,10 +260,8 @@ extract_vendor_options(struct bootp_pack
+ /*
+  * Check netinfo for ipv4 parameters and add them to the fspec iff the
+  * fspec has no existing value.
+- *
+- * Returns 1 on success, 0 on failure.
+  */
+-static int
++static void
+ extract_netinfo_args(struct boot_fspec_t *result)
+ {
+      struct bootp_packet *packet;
+@@ -271,7 +269,7 @@ extract_netinfo_args(struct boot_fspec_t
+      /* Check to see if we can get the [scyg]iaddr fields from netinfo */
+      packet = prom_get_netinfo();
+      if (packet == NULL)
+-          return 0;
++          return;
+ 
+      DEBUG_F("We have a boot packet\n");
+      DEBUG_F(" siaddr = <%x>\n", packet->siaddr);
+@@ -303,8 +301,6 @@ extract_netinfo_args(struct boot_fspec_t
+           result->giaddr = ipv4_to_str(packet->siaddr);
+           DEBUG_F("Forcing giaddr to siaddr <%s>\n", result->giaddr);
+      }
+-
+-     return 1;
+ }
+ 
+ /*
+@@ -370,7 +366,7 @@ extract_netboot_args(char *imagepath, st
+      else
+ 	  ret = extract_ipv4_args(imagepath, result);
+  
+-     ret |= extract_netinfo_args(result);
++     extract_netinfo_args(result);
+ 
+      DEBUG_F("ipv6 = <%d>\n", result->is_ipv6);
+      DEBUG_F("siaddr = <%s>\n", result->siaddr);
+@@ -526,8 +522,7 @@ parse_device_path(char *imagepath, char 
+ 		   return 0;
+ 	  } else {
+                /* If we didn't get a ':' then look only in netinfo */
+-	       if (extract_netinfo_args(result) == 0)
+-		   return 0;
++	       extract_netinfo_args(result);
+ 	       result->file = strdup(ipath);
+           }
+ 

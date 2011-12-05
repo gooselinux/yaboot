@@ -1,0 +1,32 @@
+--- yaboot-1.3.13/ybin/ybin~	2005-08-10 15:09:32.000000000 +0100
++++ yaboot-1.3.13/ybin/ybin	2005-08-11 16:13:36.000000000 +0100
+@@ -353,17 +353,19 @@ checkconf()
+ 	fi
+ 
+ 	## make sure $mntpoint is on $boot, this matters to nvram updating.
+-	if [ "$(v=`df "$mntpoint" 2> /dev/null | grep ^/dev/` ; echo ${v%%[ ]*})" != "$boot" -a -d "$mntpoint" ] ; then
+-	    echo 1>&2 "$PRG: $mntpoint is not located on $boot"
+-	    local CONFERR=1
+-	    ## more then one subdirectory deep is not supported. no sed available on boot floppies ( / -> \ )
+-	elif [ "$mntpoint" != "$(v=`df "$mntpoint" 2> /dev/null | grep ^/dev/` ; echo ${v##*[ ]})" ] ; then
+-	    echo "$(v=`df "$mntpoint" 2>/dev/null | grep ^/dev/`; m=${v##*[ ]}; echo "${mntpoint##*$m/}")" | grep -q /
+-	    if [ $? = 0 ] ; then
+-		echo 1>&2 "$PRG:$ERR $mntpoint is more then one subdirectory deep from root of $boot"
++	if [ -n "$magicboot" -o "$nonvram" = 0 ]; then
++	    if [ "$(v=`df "$mntpoint" 2> /dev/null | grep ^/dev/` ; echo ${v%%[ ]*})" != "$boot" -a -d "$mntpoint" ] ; then
++		echo 1>&2 "$PRG: $mntpoint is not located on $boot"
+ 		local CONFERR=1
+-	    else
+-		OFDIR="$(v=`df "$mntpoint" 2>/dev/null | grep ^/dev/`; m=${v##*[ ]}; echo "${mntpoint##*$m/}")"
++	    ## more than one subdirectory deep is not supported. no sed available on boot floppies ( / -> \ )
++	    elif [ "$mntpoint" != "$(v=`df "$mntpoint" 2> /dev/null | grep ^/dev/` ; echo ${v##*[ ]})" ] ; then
++		echo "$(v=`df "$mntpoint" 2>/dev/null | grep ^/dev/`; m=${v##*[ ]}; echo "${mntpoint##*$m/}")" | grep -q /
++		if [ $? = 0 ] ; then
++		    echo 1>&2 "$PRG:$ERR $mntpoint is more then one subdirectory deep from root of $boot"
++		    local CONFERR=1
++		else
++		    OFDIR="$(v=`df "$mntpoint" 2>/dev/null | grep ^/dev/`; m=${v##*[ ]}; echo "${mntpoint##*$m/}")"
++		fi
+ 	    fi
+ 	fi
+ 

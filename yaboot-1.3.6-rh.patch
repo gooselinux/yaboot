@@ -1,0 +1,94 @@
+--- yaboot-1.3.6/Makefile.rh	Fri May 17 15:08:25 2002
++++ yaboot-1.3.6/Makefile	Fri May 17 15:09:32 2002
+@@ -178,32 +178,32 @@
+ 	strip --remove-section=.comment --remove-section=.note util/addnote
+ 
+ install: all strip
+-	install -d -o root -g root -m 0755 ${ROOT}/etc/
+-	install -d -o root -g root -m 0755 ${ROOT}/${PREFIX}/sbin/
+-	install -d -o root -g root -m 0755 ${ROOT}/${PREFIX}/lib
+-	install -d -o root -g root -m 0755 ${ROOT}/${PREFIX}/lib/yaboot
+-	install -d -o root -g root -m 0755 ${ROOT}/${PREFIX}/${MANDIR}/man5/
+-	install -d -o root -g root -m 0755 ${ROOT}/${PREFIX}/${MANDIR}/man8/
+-	install -o root -g root -m 0644 second/yaboot ${ROOT}/$(PREFIX)/lib/yaboot
+-	install -o root -g root -m 0755 util/addnote ${ROOT}/${PREFIX}/lib/yaboot/addnote
+-	install -o root -g root -m 0644 first/ofboot ${ROOT}/${PREFIX}/lib/yaboot/ofboot
+-	install -o root -g root -m 0755 ybin/ofpath ${ROOT}/${PREFIX}/sbin/ofpath
+-	install -o root -g root -m 0755 ybin/ybin ${ROOT}/${PREFIX}/sbin/ybin
+-	install -o root -g root -m 0755 ybin/yabootconfig ${ROOT}/${PREFIX}/sbin/yabootconfig
++	install -d -m 0755 ${ROOT}/etc/
++	install -d -m 0755 ${ROOT}/${PREFIX}/sbin/
++	install -d -m 0755 ${ROOT}/${PREFIX}/lib
++	install -d -m 0755 ${ROOT}/${PREFIX}/lib/yaboot
++	install -d -m 0755 ${ROOT}/${PREFIX}/${MANDIR}/man5/
++	install -d -m 0755 ${ROOT}/${PREFIX}/${MANDIR}/man8/
++	install -m 0644 second/yaboot ${ROOT}/$(PREFIX)/lib/yaboot
++	install -m 0755 util/addnote ${ROOT}/${PREFIX}/lib/yaboot/addnote
++	install -m 0644 first/ofboot ${ROOT}/${PREFIX}/lib/yaboot/ofboot
++	install -m 0755 ybin/ofpath ${ROOT}/${PREFIX}/sbin/ofpath
++	install -m 0755 ybin/ybin ${ROOT}/${PREFIX}/sbin/ybin
++	install -m 0755 ybin/yabootconfig ${ROOT}/${PREFIX}/sbin/yabootconfig
+ 	rm -f ${ROOT}/${PREFIX}/sbin/mkofboot
+ 	ln -s ybin ${ROOT}/${PREFIX}/sbin/mkofboot
+ 	@gzip -9 man/*.[58]
+-	install -o root -g root -m 0644 man/bootstrap.8.gz ${ROOT}/${PREFIX}/${MANDIR}/man8/bootstrap.8.gz
+-	install -o root -g root -m 0644 man/mkofboot.8.gz ${ROOT}/${PREFIX}/${MANDIR}/man8/mkofboot.8.gz
+-	install -o root -g root -m 0644 man/ofpath.8.gz ${ROOT}/${PREFIX}/${MANDIR}/man8/ofpath.8.gz
+-	install -o root -g root -m 0644 man/yaboot.8.gz ${ROOT}/${PREFIX}/${MANDIR}/man8/yaboot.8.gz
+-	install -o root -g root -m 0644 man/yabootconfig.8.gz ${ROOT}/${PREFIX}/${MANDIR}/man8/yabootconfig.8.gz
+-	install -o root -g root -m 0644 man/ybin.8.gz ${ROOT}/${PREFIX}/${MANDIR}/man8/ybin.8.gz
+-	install -o root -g root -m 0644 man/yaboot.conf.5.gz ${ROOT}/${PREFIX}/${MANDIR}/man5/yaboot.conf.5.gz
++	install -m 0644 man/bootstrap.8.gz ${ROOT}/${PREFIX}/${MANDIR}/man8/bootstrap.8.gz
++	install -m 0644 man/mkofboot.8.gz ${ROOT}/${PREFIX}/${MANDIR}/man8/mkofboot.8.gz
++	install -m 0644 man/ofpath.8.gz ${ROOT}/${PREFIX}/${MANDIR}/man8/ofpath.8.gz
++	install -m 0644 man/yaboot.8.gz ${ROOT}/${PREFIX}/${MANDIR}/man8/yaboot.8.gz
++	install -m 0644 man/yabootconfig.8.gz ${ROOT}/${PREFIX}/${MANDIR}/man8/yabootconfig.8.gz
++	install -m 0644 man/ybin.8.gz ${ROOT}/${PREFIX}/${MANDIR}/man8/ybin.8.gz
++	install -m 0644 man/yaboot.conf.5.gz ${ROOT}/${PREFIX}/${MANDIR}/man5/yaboot.conf.5.gz
+ 	@gunzip man/*.gz
+ 	@if [ ! -e ${ROOT}/etc/yaboot.conf ] ; then						\
+-		echo "install -o root -g root -m 0644 etc/yaboot.conf ${ROOT}/etc/yaboot.conf"; \
+-		install -o root -g root -m 0644 etc/yaboot.conf ${ROOT}/etc/yaboot.conf;	\
++		echo "install -m 0644 etc/yaboot.conf ${ROOT}/etc/yaboot.conf"; \
++		install -m 0644 etc/yaboot.conf ${ROOT}/etc/yaboot.conf;	\
+ 	 else											\
+ 		echo "/etc/yaboot.conf already exists, leaving it alone";			\
+ 	 fi
+--- yaboot-1.3.6/etc/yaboot.conf.fhs	Thu May 23 15:56:11 2002
++++ yaboot-1.3.6/etc/yaboot.conf	Thu May 23 15:57:29 2002
+@@ -10,7 +10,7 @@
+ ## specify a partition number for this!  On IBM hardware you can
+ ## generally comment this out.
+ 
+-device=hd:
++## device=hd:
+ 
+ ## partition is the partition number where the kernel images are
+ ## located.  The kernel images should be on your root filesystem, so
+@@ -20,7 +20,7 @@
+ ## option can be either set globally as shown here, or per image in
+ ## the image= sections
+ 
+-partition=3
++partition=2
+ 
+ ## delay is the amount of time in seconds the dual boot menu (if one
+ ## is configured, by the presense of macos, macosx, etc options here)
+@@ -35,13 +35,13 @@
+ ## section in this config file or the value of default=).
+ 
+ timeout=40
+-install=/usr/local/lib/yaboot/yaboot
+-magicboot=/usr/local/lib/yaboot/ofboot
++install=/usr/lib/yaboot/yaboot
++magicboot=/usr/lib/yaboot/ofboot
+ 
+ ## Change the default colors, fgcolor is the text color, bgcolor is
+ ## the screen background color. (default: fgcolor=white, bgcolor=black)
+-#fgcolor=black
+-#bgcolor=green
++fgcolor=white
++bgcolor=black
+ 
+ ## Password supplied in plaintext, required for yaboot to boot, unless
+ ## restricted is also present (see below). Be sure to

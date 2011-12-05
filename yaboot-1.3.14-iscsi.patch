@@ -1,0 +1,55 @@
+Index: b/second/file.c
+===================================================================
+--- a/second/file.c
++++ b/second/file.c
+@@ -671,6 +671,9 @@
+      case FILE_DEVICE_BLOCK:
+ 	  DEBUG_F("device is a block device\n");
+ 	  return file_block_open(file, spec, spec->part);
++     case FILE_DEVICE_ISCSI:
++	  DEBUG_F("device is a iSCSI device\n");
++	  return file_block_open(file, spec, spec->part);
+      case FILE_DEVICE_NET:
+ 	  DEBUG_F("device is a network device\n");
+ 	  return file_net_open(file, spec);
+Index: b/second/partition.c
+===================================================================
+--- a/second/partition.c
++++ b/second/partition.c
+@@ -400,7 +400,8 @@
+      struct partition_t*	found;
+      char *type = NULL;
+ 
+-     if (prom_get_devtype(device) != FILE_DEVICE_BLOCK)
++     int device_kind = prom_get_devtype(device);
++     if (device_kind != FILE_DEVICE_BLOCK && device_kind != FILE_DEVICE_ISCSI)
+ 	  return NULL;
+ 
+      parts = partitions_lookup(device);
+Index: b/second/prom.c
+===================================================================
+--- a/second/prom.c
++++ b/second/prom.c
+@@ -196,7 +196,7 @@
+      char       tmp[64];
+ 
+      if (strstr(device, TOK_ISCSI))
+-	  device = strcpy(tmp, "/vdevice/gscsi/disk");
++	  return FILE_DEVICE_ISCSI;
+ 
+      /* Find OF device phandle */
+      dev = prom_finddevice(device);
+Index: b/second/fs_ext2.c
+===================================================================
+--- a/second/fs_ext2.c
++++ b/second/fs_ext2.c
+@@ -139,7 +139,8 @@
+ 	  DEBUG_LEAVE(FILE_ERR_FSBUSY);
+ 	  return FILE_ERR_FSBUSY;
+      }
+-     if (file->device_kind != FILE_DEVICE_BLOCK) {
++     if (file->device_kind != FILE_DEVICE_BLOCK
++         && file->device_kind != FILE_DEVICE_ISCSI) {
+ 	  DEBUG_LEAVE(FILE_ERR_BADDEV);
+ 	  return FILE_ERR_BADDEV;
+      }
