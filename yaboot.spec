@@ -1,7 +1,7 @@
 Summary: Linux bootloader for Power Macintosh "New World" computers
 Name: yaboot
 Version: 1.3.14
-Release: 35%{?dist}
+Release: 35%{?dist}.1
 License: GPLv2+
 Group: System Environment/Base
 Source: http://yaboot.ozlabs.org/releases/yaboot-%{version}.tar.gz
@@ -65,6 +65,9 @@ Patch44: yaboot-1.3.14-256-RMA.patch
 # 621598, better memory management
 Patch45: yaboot-1.3.14-memory_management.patch
 
+# 638654, properly boot when gateway != tftp server
+Patch46: yaboot-1.3.14-subnetmask.patch
+
 URL: http://yaboot.ozlabs.org/
 BuildRoot: %(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
 ExclusiveArch: ppc
@@ -120,6 +123,7 @@ yaboot can also bootload IBM pSeries machines.
 %patch43 -p1 -b .prom_getchars
 %patch44 -p1 -b .256-RMA
 %patch45 -p1 -b .memory_management
+%patch46 -p1 -b .subnetmask
 
 %build
 iconv -f ISO88592 -t utf-8 -o doc/yaboot-howto.de.try.sgml \
@@ -167,6 +171,10 @@ rm -rf $RPM_BUILD_ROOT
 %ghost %config(noreplace) %{_sysconfdir}/yaboot.conf
 
 %changelog
+* Wed Oct 13 2010 Roman Rakus <rrakus@redhat.com> - 1.3.14-35.1
+- Properly load config file while netbooting and gateway != tftp server
+  Resolves: #642694
+
 * Fri Aug 06 2010 Roman Rakus <rrakus@redhat.com> - 1.3.14-35
 - Better memory management
   Resolves: #621598

@@ -1,0 +1,21 @@
+Index: yaboot-1.3.14/second/file.c
+===================================================================
+--- yaboot-1.3.14.orig/second/file.c	2010-09-15 11:02:38.000000000 +1000
++++ yaboot-1.3.14/second/file.c	2010-09-15 11:18:36.662902033 +1000
+@@ -172,7 +172,7 @@
+      result->giaddr = is_valid_ip_str(scopy(&str, &args));
+      result->bootp_retries = scopy(&str, &args);
+      result->tftp_retries = scopy(&str, &args);
+-     result->subnetmask = scopy(&str, &args);
++     result->subnetmask = is_valid_ip_str(scopy(&str, &args));
+      if (*args) {
+ 	  result->addl_params = strdup(args);
+ 	  if (!result->addl_params)
+@@ -375,6 +375,7 @@
+      DEBUG_F("giaddr = <%s>\n", result->giaddr);
+      DEBUG_F("bootp_retries = <%s>\n", result->bootp_retries);
+      DEBUG_F("tftp_retries = <%s>\n", result->tftp_retries);
++     DEBUG_F("subnetmask = <%s>\n", result->subnetmask);
+      DEBUG_F("addl_params = <%s>\n", result->addl_params);
+      DEBUG_F("dhcpv6 = <%s>\n", result->dhcpv6);
+      DEBUG_F("blksize = <%s>\n", result->blksize);
